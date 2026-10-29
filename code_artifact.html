@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>샤를의 법칙 탐구 - 오줌싸개 인형을 도와줘!</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #f0f9ff 100%);
+        }
+
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(14, 116, 144, 0.15), 0 8px 10px -6px rgba(14, 116, 144, 0.1);
+        }
+
+        .touch-btn {
+            transition: all 0.15s ease-out;
+        }
+        .touch-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #38bdf8;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Top Navigation / Status Header -->
+    <header class="bg-sky-600 text-white p-3 md:p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2 md:space-x-3">
+                <div class="bg-yellow-400 text-sky-900 rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center font-jua text-xl shadow-inner">
+                    <i class="fa-solid fa-flask-vial"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-2xl font-jua tracking-wide">중1 과학 | 샤를의 법칙 탐구 게임</h1>
+                    <p class="text-[11px] md:text-xs text-sky-200">오줌싸개 인형 구출 작전!</p>
+                </div>
+            </div>
+
+            <!-- Timer & Student Name -->
+            <div class="flex items-center gap-3">
+                <div id="user-pill" class="hidden md:flex items-center bg-sky-700/80 px-3 py-1.5 rounded-xl border border-sky-400/30 text-xs">
+                    <i class="fa-solid fa-user-astronaut text-yellow-300 mr-2"></i>
+                    <span id="display-student-name" class="font-bold">학생</span>
+                </div>
+                <div class="bg-slate-900/80 text-amber-300 px-4 py-2 rounded-xl font-mono font-bold text-base md:text-xl border border-amber-400/40 shadow flex items-center gap-2">
+                    <i class="fa-solid fa-stopwatch text-amber-400"></i>
+                    <span id="game-timer">00:00.0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game View Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 flex flex-col justify-center">
+
+        <!-- SCREEN 0: Student Entry & Mission Briefing -->
+        <section id="screen-intro" class="bg-white rounded-3xl p-6 md:p-8 card-shadow border-4 border-sky-200 text-center max-w-2xl mx-auto w-full my-auto transition-all">
+            <div class="inline-block bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-xs md:text-sm font-bold mb-3">
+                🚨 긴급 탐구 미션
+            </div>
+            <h2 class="text-2xl md:text-3xl font-jua text-sky-900 mb-4">"도와줘요! 오줌이 오줌을 안 싸요!"</h2>
+            
+            <div class="flex justify-center my-4">
+                <div class="relative w-36 h-36 bg-amber-50 rounded-full border-4 border-amber-300 flex flex-col items-center justify-center shadow-inner">
+                    <div class="text-5xl mb-1">👶💦</div>
+                    <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">시무룩...</span>
+                </div>
+            </div>
+
+            <p class="text-sm md:text-base text-slate-600 mb-6 leading-relaxed">
+                오줌싸개 인형 '오줌이'가 물을 뿜어내지 못해 슬퍼하고 있습니다.<br>
+                여러분은 **샤를의 법칙(온도와 기체 부피의 관계)**을 이용해 오줌이가 시원하게 물을 쏠 수 있도록 실험 순서를 올바르게 맞춰 도와주어야 합니다!
+            </p>
+
+            <div class="bg-sky-50 rounded-2xl p-4 border border-sky-100 text-left mb-6">
+                <label class="block text-xs font-bold text-sky-800 mb-2">요원 이름 (학번 및 이름 입력):</label>
+                <input type="text" id="input-student-name" placeholder="예: 10101 홍길동" class="w-full p-3 rounded-xl border-2 border-sky-300 focus:outline-none focus:border-sky-500 text-base font-semibold">
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white rounded-2xl font-jua text-xl md:text-2xl shadow-lg touch-btn flex items-center justify-center gap-3">
+                <i class="fa-solid fa-play"></i> 미션 시작하기!
+            </button>
+        </section>
+
+        <!-- SCREEN 1: Step Ordering Game (Interactive Touch drag/reorder) -->
+        <section id="screen-game" class="hidden flex-col gap-4 w-full">
+            
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-sky-100 flex justify-between items-center">
+                <div>
+                    <h3 class="font-jua text-lg text-sky-900">미션 1: 실험 과정 순서 맞추기</h3>
+                    <p class="text-xs text-slate-500">카드를 순서대로 눌러 아래 빈칸에 샤를의 법칙 원리 순서대로 배치하세요!</p>
+                </div>
+                <button onclick="resetOrder()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg font-bold text-slate-600 touch-btn">
+                    <i class="fa-solid fa-rotate-left"></i> 초기화
+                </button>
+            </div>
+
+            <!-- Target Drop Slots -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div id="slot-0" onclick="removeFromSlot(0)" class="min-h-[110px] bg-sky-50/80 border-2 border-dashed border-sky-300 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer relative">
+                    <span class="absolute top-2 left-3 font-jua text-sky-400 text-sm">1단계</span>
+                    <span class="text-xs text-sky-400 placeholder-text">여기를 터치해 카드를 채우세요</span>
+                </div>
+                <div id="slot-1" onclick="removeFromSlot(1)" class="min-h-[110px] bg-sky-50/80 border-2 border-dashed border-sky-300 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer relative">
+                    <span class="absolute top-2 left-3 font-jua text-sky-400 text-sm">2단계</span>
+                    <span class="text-xs text-sky-400 placeholder-text">여기를 터치해 카드를 채우세요</span>
+                </div>
+                <div id="slot-2" onclick="removeFromSlot(2)" class="min-h-[110px] bg-sky-50/80 border-2 border-dashed border-sky-300 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer relative">
+                    <span class="absolute top-2 left-3 font-jua text-sky-400 text-sm">3단계</span>
+                    <span class="text-xs text-sky-400 placeholder-text">여기를 터치해 카드를 채우세요</span>
+                </div>
+            </div>
+
+            <!-- Available Cards Pool -->
+            <div class="bg-amber-50/80 rounded-2xl p-4 border border-amber-200">
+                <h4 class="text-xs font-bold text-amber-800 mb-3 flex items-center gap-1">
+                    <i class="fa-solid fa-hand-pointer"></i> 실험 카드 선택함 (터치하여 이동):
+                </h4>
+                <div id="card-pool" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <!-- Cards rendered via JS -->
+                </div>
+            </div>
+
+            <button id="btn-submit-order" onclick="checkExperimentOrder()" class="w-full py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl font-jua text-xl shadow-lg touch-btn flex items-center justify-center gap-2 mt-2">
+                <i class="fa-solid fa-circle-check"></i> 순서 검증 및 실험 실행!
+            </button>
+        </section>
+
+        <!-- SCREEN 2: Simulation Execution Animation -->
+        <section id="screen-sim" class="hidden flex-col items-center justify-center bg-white rounded-3xl p-6 shadow-lg border-4 border-sky-200 text-center">
+            <span id="sim-status-badge" class="bg-teal-100 text-teal-800 font-bold px-4 py-1.5 rounded-full text-sm mb-4">
+                1단계 실행 중: 인형 내부 공기 데우기
+            </span>
+
+            <!-- Simulation Canvas Representation -->
+            <div class="relative w-64 h-72 my-4 flex flex-col items-center justify-end">
+                <!-- Water Stream Animation -->
+                <div id="sim-water-stream" class="absolute left-[35%] bottom-[120px] w-2 bg-cyan-400 opacity-0 rounded-full transition-all duration-300 origin-bottom transform -rotate-45" style="height: 0px;"></div>
+
+                <!-- Doll Head -->
+                <div class="w-28 h-28 bg-amber-200 border-4 border-amber-300 rounded-full flex flex-col items-center justify-center shadow-inner relative z-10">
+                    <div class="flex gap-4 mb-1">
+                        <div class="w-3 h-3 bg-slate-800 rounded-full"></div>
+                        <div class="w-3 h-3 bg-slate-800 rounded-full"></div>
+                    </div>
+                    <div class="w-4 h-4 bg-amber-900 rounded-full border-2 border-amber-400"></div>
+                </div>
+
+                <!-- Doll Body -->
+                <div class="w-36 h-40 bg-amber-100 border-4 border-amber-300 rounded-b-3xl relative overflow-hidden mt-[-10px] shadow-lg flex flex-col justify-end">
+                    <!-- Internal Water level -->
+                    <div id="sim-water" class="w-full bg-cyan-400/80 transition-all duration-500" style="height: 0%;"></div>
+                    <!-- Internal Air Space -->
+                    <div id="sim-air" class="absolute top-0 w-full bg-amber-50/30 flex items-center justify-center" style="height: 100%;">
+                        <div id="sim-particles" class="relative w-full h-full overflow-hidden"></div>
+                    </div>
+                </div>
+
+                <!-- Cold Water Basin -->
+                <div id="sim-basin" class="absolute bottom-0 w-80 h-24 border-4 border-sky-300 bg-sky-200/50 rounded-b-2xl opacity-0 transition-opacity duration-500 -z-0"></div>
+            </div>
+
+            <p id="sim-text" class="text-sm font-semibold text-slate-700 my-2 h-12">
+                뜨거운 물을 부어 인형 안의 공기 입자 운동을 활발하게 만듭니다...
+            </p>
+        </section>
+
+        <!-- SCREEN 3: Particle Model Drawing & Concept Assessment -->
+        <section id="screen-particle" class="hidden flex-col gap-4 w-full">
+            <div class="bg-white rounded-3xl p-6 shadow-lg border-4 border-sky-200">
+                <div class="flex justify-between items-center border-b pb-3 mb-4">
+                    <div>
+                        <h3 class="font-jua text-xl text-sky-900">미션 2: 샤를의 법칙 입자 모형 나타내기</h3>
+                        <p class="text-xs text-slate-500">인형 안의 공기를 데우거나 식힐 때 입자들의 거리와 운동 상태를 선택/배치하세요!</p>
+                    </div>
+                    <span class="bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded-full text-xs">최종 평가</span>
+                </div>
+
+                <!-- Interactive Particle Question 1 -->
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <p class="font-bold text-sm text-slate-800 mb-2">
+                            Q1. 뜨거운 물을 부었을 때(온도가 올라갈 때), 인형 내부 기체 입자들의 모습으로 올바른 것은?
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button onclick="selectParticleAnswer(1, 'A')" id="p1-ans-A" class="particle-option border-2 border-slate-200 hover:border-sky-400 p-3 rounded-xl text-left bg-white transition flex items-center gap-3">
+                                <div class="w-16 h-16 bg-amber-50 border rounded-lg relative overflow-hidden flex-shrink-0">
+                                    <div class="absolute inset-0 flex flex-wrap gap-1 p-2 items-center justify-center">
+                                        <div class="w-2.5 h-2.5 bg-sky-500 rounded-full"></div>
+                                        <div class="w-2.5 h-2.5 bg-sky-500 rounded-full"></div>
+                                        <div class="w-2.5 h-2.5 bg-sky-500 rounded-full"></div>
+                                        <div class="w-2.5 h-2.5 bg-sky-500 rounded-full"></div>
+                                        <div class="w-2.5 h-2.5 bg-sky-500 rounded-full"></div>
+                                        <div class="w-2.5 h-2.5 bg-sky-500 rounded-full"></div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold text-slate-700">① 입자 간 거리가 좁고 운동이 둔하다.</span>
+                            </button>
+                            
+                            <button onclick="selectParticleAnswer(1, 'B')" id="p1-ans-B" class="particle-option border-2 border-slate-200 hover:border-sky-400 p-3 rounded-xl text-left bg-white transition flex items-center gap-3">
+                                <div class="w-16 h-16 bg-amber-50 border rounded-lg relative overflow-hidden flex-shrink-0">
+                                    <div class="absolute inset-0 p-1">
+                                        <div class="w-2.5 h-2.5 bg-red-500 rounded-full absolute top-1 left-2"></div>
+                                        <div class="w-2.5 h-2.5 bg-red-500 rounded-full absolute top-8 right-2"></div>
+                                        <div class="w-2.5 h-2.5 bg-red-500 rounded-full absolute bottom-2 left-6"></div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold text-slate-700">② 입자 간 거리가 멀어지고 활발하게 운동하여 팽창한다. (정답)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Particle Canvas Placement (Question 2) -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <p class="font-bold text-sm text-slate-800 mb-2">
+                            Q2. 아래 용기 안을 터치하여 <span class="text-sky-600">차가워진 상태(수축)</span>의 기체 입자 5개를 원하는 위치에 배치해보세요!
+                        </p>
+                        <div class="flex flex-col md:flex-row gap-4 items-center">
+                            <div id="particle-canvas" onclick="placeParticle(event)" class="w-60 h-40 bg-white border-2 border-sky-300 rounded-2xl relative cursor-pointer overflow-hidden shadow-inner flex-shrink-0">
+                                <span id="canvas-hint" class="absolute inset-0 flex items-center justify-center text-[11px] text-sky-400 text-center pointer-events-none p-2">
+                                    여기를 터치해 차가운 공기 입자 5개를 찍으세요 (<span id="placed-count">0</span>/5)
+                                </span>
+                            </div>
+                            <div class="text-xs text-slate-600 space-y-2">
+                                <p><i class="fa-solid fa-lightbulb text-amber-500"></i> <strong>힌트:</strong> 차가운 기체는 입자의 운동 속도가 느려지고 거리가 모여 부피가 줄어듭니다!</p>
+                                <button onclick="clearParticles()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs">
+                                    <i class="fa-solid fa-eraser"></i> 입자 다시 찍기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="submitFinalQuiz()" class="w-full py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl font-jua text-xl shadow-lg touch-btn mt-4">
+                    <i class="fa-solid fa-paper-plane"></i> 탐구 결과 제출 및 랭킹 확인!
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: Victory, Praises & Competition Leaderboard -->
+        <section id="screen-result" class="hidden flex-col gap-4 w-full">
+            <!-- Praise Card -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border-4 border-yellow-300 text-center relative overflow-hidden">
+                <div class="text-5xl mb-2 animate-bounce">🎉🏆👏</div>
+                <h2 class="text-2xl md:text-3xl font-jua text-slate-800">오줌싸개 인형 구출 성공!</h2>
+                <p id="praise-message" class="text-sky-600 font-bold text-sm md:text-base my-2">
+                    축하합니다! 샤를의 법칙 마스터 요원 명예 훈장을 획득했습니다!
+                </p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 my-4 max-w-md mx-auto flex justify-around items-center">
+                    <div>
+                        <span class="block text-xs text-slate-500">최종 소요 시간</span>
+                        <span id="final-time" class="font-mono text-xl font-bold text-amber-600">00:00.0</span>
+                    </div>
+                    <div class="h-8 w-px bg-amber-200"></div>
+                    <div>
+                        <span class="block text-xs text-slate-500">나의 랭킹 순위</span>
+                        <span id="final-rank" class="font-jua text-xl font-bold text-sky-600">1위</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard / Class Competition -->
+            <div class="bg-white rounded-3xl p-6 shadow-lg border-2 border-sky-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-jua text-lg text-sky-900 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-yellow-500"></i> 학급 실시간 탐구 명예의 전당
+                    </h3>
+                    <span class="text-xs text-slate-400">가장 빠른 오줌싸개 구출왕!</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs md:text-sm">
+                        <thead class="bg-sky-50 text-sky-800 font-bold border-b border-sky-100">
+                            <tr>
+                                <th class="p-3 rounded-l-xl">순위</th>
+                                <th class="p-3">요원 이름</th>
+                                <th class="p-3">소요 시간</th>
+                                <th class="p-3 rounded-r-xl">칭찬 칭호</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="divide-y divide-slate-100 font-semibold">
+                            <!-- Dynamic Leaderboard items generated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <button onclick="restartGame()" class="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-jua text-lg shadow touch-btn mt-6">
+                    <i class="fa-solid fa-rotate"></i> 다시 도전하기
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-sky-900 text-sky-200 text-center p-3 text-xs">
+        중학교 1학년 과학 | 기체의 성질 - 샤를의 법칙 (온도와 부피) 탐구 게임
+    </footer>
+
+    <!-- Game Logic JavaScript -->
+    <script>
+        // Game State Variables
+        let studentName = "";
+        let startTime = 0;
+        let timerInterval = null;
+        let elapsedTime = 0;
+        let selectedSlots = [null, null, null];
+        let quiz1Answer = null;
+        let placedParticlesCount = 0;
+
+        // Experiment Step Cards Definition
+        const stepsData = [
+            { id: 'step-A', title: '뜨거운 물을 인형에 붓기', desc: '인형 안 공기 데우기 ➔ 공기 팽창 ➔ 구멍으로 공기 배출', correctIndex: 0, icon: '🔥' },
+            { id: 'step-B', title: '인형을 찬물 수조에 넣기', desc: '공기 수축 ➔ 내부 압력 감소 ➔ 찬물 흡수', correctIndex: 1, icon: '🧊' },
+            { id: 'step-C', title: '다시 뜨거운 물 부어 발사!', desc: '내부 공기 급격히 팽창 ➔ 물을 밀어내어 오줌 쏘기!', correctIndex: 2, icon: '💦' }
+        ];
+
+        // Mock Leaderboard Data
+        let mockLeaderboard = [
+            { name: "10102 김과학", time: 38.4, title: "⚡ 빛의 샤를 마스터" },
+            { name: "10115 이탐구", time: 42.1, title: "🔥 열정의 실험왕" },
+            { name: "10108 박실험", time: 49.0, title: "💧 촉촉한 구원자" }
+        ];
+
+        // Initialize App
+        window.onload = function() {
+            renderCardPool();
+        };
+
+        // Screen Switcher Helper
+        function showScreen(screenId) {
+            ['screen-intro', 'screen-game', 'screen-sim', 'screen-particle', 'screen-result'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                document.getElementById(id).classList.remove('flex');
+            });
+            const target = document.getElementById(screenId);
+            target.classList.remove('hidden');
+            target.classList.add('flex');
+        }
+
+        // Timer Controls
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                elapsedTime = (Date.now() - startTime) / 1000;
+                const mins = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+                const secs = (elapsedTime % 60).toFixed(1).padStart(4, '0');
+                document.getElementById('game-timer').innerText = `${mins}:${secs}`;
+            }, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // Step 1: Start Game & Mission
+        function startGame() {
+            const input = document.getElementById('input-student-name').value.trim();
+            if (!input) {
+                alert('요원 이름(학번 및 이름)을 입력해주세요!');
+                return;
+            }
+            studentName = input;
+            document.getElementById('display-student-name').innerText = studentName;
+            document.getElementById('user-pill').classList.remove('hidden');
+
+            showScreen('screen-game');
+            startTimer();
+        }
+
+        // Render Experiment Step Cards into Pool
+        function renderCardPool() {
+            const pool = document.getElementById('card-pool');
+            pool.innerHTML = '';
+            
+            // Shuffle cards for challenge
+            const shuffled = [...stepsData].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(step => {
+                const isSelected = selectedSlots.includes(step.id);
+                if (!isSelected) {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-3 rounded-xl border-2 border-amber-300 shadow-sm cursor-pointer touch-btn flex items-center gap-3 hover:border-amber-500";
+                    card.onclick = () => selectCardToSlot(step.id);
+                    card.innerHTML = `
+                        <span class="text-2xl">${step.icon}</span>
+                        <div>
+                            <h5 class="font-jua text-sm text-slate-800">${step.title}</h5>
+                            <p class="text-[10px] text-slate-500">${step.desc}</p>
+                        </div>
+                    `;
+                    pool.appendChild(card);
+                }
+            });
+        }
+
+        // Select Card from Pool into Empty Slot
+        function selectCardToSlot(cardId) {
+            const emptyIdx = selectedSlots.findIndex(slot => slot === null);
+            if (emptyIdx === -1) {
+                alert('3개 슬롯이 모두 채워졌습니다. 슬롯을 터치하여 취소할 수 있습니다.');
+                return;
+            }
+            selectedSlots[emptyIdx] = cardId;
+            updateSlotsUI();
+            renderCardPool();
+        }
+
+        // Remove Card from Slot back to Pool
+        function removeFromSlot(slotIndex) {
+            selectedSlots[slotIndex] = null;
+            updateSlotsUI();
+            renderCardPool();
+        }
+
+        // Reset all slot selections
+        function resetOrder() {
+            selectedSlots = [null, null, null];
+            updateSlotsUI();
+            renderCardPool();
+        }
+
+        // Update Target Slots UI
+        function updateSlotsUI() {
+            selectedSlots.forEach((cardId, idx) => {
+                const slotEl = document.getElementById(`slot-${idx}`);
+                if (cardId) {
+                    const step = stepsData.find(s => s.id === cardId);
+                    slotEl.className = "min-h-[110px] bg-white border-2 border-sky-500 rounded-2xl p-3 flex flex-col justify-center items-center text-center cursor-pointer shadow-md relative";
+                    slotEl.innerHTML = `
+                        <span class="absolute top-2 left-3 font-jua text-sky-600 text-xs">${idx + 1}단계</span>
+                        <span class="text-xl mb-1">${step.icon}</span>
+                        <h5 class="font-jua text-xs text-sky-900">${step.title}</h5>
+                    `;
+                } else {
+                    slotEl.className = "min-h-[110px] bg-sky-50/80 border-2 border-dashed border-sky-300 rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer relative";
+                    slotEl.innerHTML = `
+                        <span class="absolute top-2 left-3 font-jua text-sky-400 text-sm">${idx + 1}단계</span>
+                        <span class="text-xs text-sky-400">여기를 터치해 카드를 채우세요</span>
+                    `;
+                }
+            });
+        }
+
+        // Check if Experiment Order is Correct (Charles's Law logic)
+        function checkExperimentOrder() {
+            if (selectedSlots.includes(null)) {
+                alert('실험 단계 3가지를 모두 배치해 주세요!');
+                return;
+            }
+
+            // Check correctness: step-A -> step-B -> step-C
+            if (selectedSlots[0] === 'step-A' && selectedSlots[1] === 'step-B' && selectedSlots[2] === 'step-C') {
+                runSimulationAnimation();
+            } else {
+                alert('❌ 순서가 올바르지 않습니다! 샤를의 법칙(공기 데우기 ➔ 찬물 흡수 ➔ 다시 데워 발사)을 다시 생각해보세요!');
+            }
+        }
+
+        // Run Visual Simulation Screen
+        function runSimulationAnimation() {
+            showScreen('screen-sim');
+            
+            const badge = document.getElementById('sim-status-badge');
+            const simText = document.getElementById('sim-text');
+            const water = document.getElementById('sim-water');
+            const basin = document.getElementById('sim-basin');
+            const stream = document.getElementById('sim-water-stream');
+
+            // Phase 1: Heat up
+            badge.innerText = "1단계: 뜨거운 물을 부어 인형 안 공기 데우기 (팽창)";
+            simText.innerText = "공기의 온도가 높아져 부피가 팽창하고 내부 공기가 밖으로 일부 빠져나갑니다!";
+            
+            setTimeout(() => {
+                // Phase 2: Cold basin water intake
+                badge.innerText = "2단계: 찬물 수조에 넣어 공기 식히기 (수축 & 물 흡입)";
+                badge.className = "bg-blue-100 text-blue-800 font-bold px-4 py-1.5 rounded-full text-sm mb-4";
+                simText.innerText = "공기가 식어 부피가 수축하고, 내부 압력이 낮아져 찬물이 빨려 들어옵니다!";
+                basin.style.opacity = "1";
+                water.style.height = "70%";
+            }, 2500);
+
+            setTimeout(() => {
+                // Phase 3: Hot water squirt!
+                badge.innerText = "3단계: 다시 뜨거운 물을 부어 오줌 발사!!";
+                badge.className = "bg-amber-100 text-amber-800 font-bold px-4 py-1.5 rounded-full text-sm mb-4";
+                simText.innerText = "팽창한 공기가 물을 강하게 밀어내어 물이 뿜어져 나옵니다! 오줌싸개 성공!";
+                basin.style.opacity = "0";
+                stream.style.opacity = "1";
+                stream.style.height = "150px";
+                
+                // Fire confetti!
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+            }, 5500);
+
+            setTimeout(() => {
+                // Move to Quiz Screen
+                showScreen('screen-particle');
+            }, 8500);
+        }
+
+        // Quiz Question 1 Answer Selection
+        function selectParticleAnswer(qNum, option) {
+            quiz1Answer = option;
+            document.querySelectorAll('.particle-option').forEach(el => el.classList.remove('border-sky-500', 'bg-sky-50'));
+            document.getElementById(`p1-ans-${option}`).classList.add('border-sky-500', 'bg-sky-50');
+        }
+
+        // Particle Canvas Interactive Dot Placement
+        function placeParticle(event) {
+            if (placedParticlesCount >= 5) return;
+
+            const canvas = document.getElementById('particle-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const dot = document.createElement('div');
+            dot.className = "w-3 h-3 bg-sky-500 rounded-full absolute transform -translate-x-1/2 -translate-y-1/2 border border-white shadow";
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
+
+            canvas.appendChild(dot);
+            placedParticlesCount++;
+
+            document.getElementById('placed-count').innerText = placedParticlesCount;
+            document.getElementById('canvas-hint').style.display = 'none';
+        }
+
+        function clearParticles() {
+            const canvas = document.getElementById('particle-canvas');
+            canvas.querySelectorAll('.bg-sky-500').forEach(el => el.remove());
+            placedParticlesCount = 0;
+            document.getElementById('placed-count').innerText = 0;
+            document.getElementById('canvas-hint').style.display = 'flex';
+        }
+
+        // Final Quiz Submit & Leaderboard Calculation
+        function submitFinalQuiz() {
+            if (!quiz1Answer) {
+                alert('Q1 질문의 답을 선택해주세요!');
+                return;
+            }
+            if (placedParticlesCount < 5) {
+                alert('Q2 터치 영역에 입자 5개를 모두 찍어주세요!');
+                return;
+            }
+
+            stopTimer();
+
+            // Calculate score/praise
+            document.getElementById('final-time').innerText = document.getElementById('game-timer').innerText;
+
+            // Add user record into Leaderboard
+            mockLeaderboard.push({
+                name: studentName,
+                time: parseFloat(elapsedTime.toFixed(1)),
+                title: "🏆 샤를의 법칙 최고 요원"
+            });
+
+            // Sort leaderboard ascending by time
+            mockLeaderboard.sort((a, b) => a.time - b.time);
+
+            const userRank = mockLeaderboard.findIndex(item => item.name === studentName) + 1;
+            document.getElementById('final-rank').innerText = `${userRank}위`;
+
+            // Praise text logic for fast completers
+            if (userRank === 1) {
+                document.getElementById('praise-message').innerText = "🥇 대단합니다! 학급 1위로 오줌싸개 인형을 구출해냈습니다!";
+            } else {
+                document.getElementById('praise-message').innerText = `👏 훌륭합니다! ${userRank}위의 빠른 속도로 탐구를 완수했습니다!`;
+            }
+
+            renderLeaderboard();
+            showScreen('screen-result');
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
+        }
+
+        // Render Leaderboard Table
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+
+            mockLeaderboard.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const isCurrentUser = item.name === studentName;
+                tr.className = isCurrentUser ? "bg-amber-100 text-amber-900 font-bold" : "hover:bg-slate-50";
+
+                let medal = `${index + 1}위`;
+                if (index === 0) medal = "🥇 1위";
+                if (index === 1) medal = "🥈 2위";
+                if (index === 2) medal = "🥉 3위";
+
+                tr.innerHTML = `
+                    <td class="p-3 font-jua">${medal}</td>
+                    <td class="p-3">${item.name} ${isCurrentUser ? '<span class="text-[10px] bg-sky-500 text-white px-1.5 py-0.5 rounded">나</span>' : ''}</td>
+                    <td class="p-3 font-mono">${item.time}초</td>
+                    <td class="p-3 text-sky-700">${item.title}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Restart Game
+        function restartGame() {
+            selectedSlots = [null, null, null];
+            quiz1Answer = null;
+            clearParticles();
+            updateSlotsUI();
+            renderCardPool();
+            showScreen('screen-intro');
+        }
+    </script>
+</body>
+</html>
